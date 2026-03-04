@@ -5,14 +5,12 @@ from playwright.async_api import async_playwright
 from axe_playwright_python.async_playwright import Axe
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-
-# --- MUDANÇA 1: Importamos a nova biblioteca ---
 from google import genai 
 
 # 1. Carrega as variáveis do ficheiro .env
 load_dotenv()
 
-# 2. Configura o Cliente do Gemini (Nova SDK)
+# 2. Configura o Cliente do Gemini
 CHAVE_API = os.getenv("GEMINI_API_KEY")
 cliente_ia = None
 if CHAVE_API:
@@ -27,9 +25,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- A MÁGICA DA IA (PROMPT ENGINEERING) ---
+# --- O NOSSO PLANO B (SALVA-VIDAS DA APRESENTAÇÃO) ---
+# Se o Google der erro 429 com as 30 pessoas, o sistema usa essas dicas perfeitas!
+DICAS_OFFLINE = {
+    "label-title-only": "Dica do Professor: Elementos de formulário precisam de uma tag <label> visível. Não use apenas o atributo 'title', pois leitores de tela podem ignorá-lo.",
+    "landmark-one-main": "Dica do Professor: Toda página precisa ter exatamente uma tag <main> para indicar onde fica o conteúdo principal do site.",
+    "page-has-heading-one": "Dica do Professor: Sua página deve ter um (e apenas um) <h1> principal para explicar o assunto para usuários e motores de busca.",
+    "region": "Dica do Professor: Todo o seu conteúdo deve estar agrupado dentro de tags semânticas (como <header>, <nav>, <main> ou <footer>).",
+    "color-contrast": "Dica do Professor: A cor do texto está muito parecida com a cor do fundo. Aumente o contraste para facilitar a leitura!",
+    "image-alt": "Dica do Professor: Toda tag <img> precisa de um atributo 'alt' descrevendo a imagem para quem não pode vê-la."
+}
+
+# --- A MÁGICA DA IA ---
 async def obter_dica_ia(regra_id, descricao, ajuda):
-    """ Envia o erro técnico para o Gemini e devolve uma dica didática """
+    # Se a dica já existe no nosso modo Offline, devolvemos ela para economizar a IA para outros erros!
+    if regra_id in DICAS_OFFLINE:
+        return DICAS_OFFLINE[regra_id]
+
     if not cliente_ia:
         return "Configure a sua chave da API do Gemini para ver dicas personalizadas."
 
@@ -42,21 +54,19 @@ async def obter_dica_ia(regra_id, descricao, ajuda):
     - Ajuda do Sistema: {ajuda}
     
     Escreva uma dica muito amigável, em português, de no máximo 3 linhas. 
-    Explique de forma muito simples o que isto significa e dê uma sugestão direta de como ele deve corrigir o código HTML ou CSS. 
-    Não uses jargões complexos nem formatação markdown excessiva.
+    Explique de forma simples o que isto significa e dê uma sugestão direta de como corrigir.
     """
     try:
-        # --- MUDANÇA 2: Nova forma de chamar a IA assincronamente ---
+        # Usando o modelo correto do Gemini 2.0
         resposta = await cliente_ia.aio.models.generate_content(
             model='gemini-2.0-flash',
             contents=prompt
         )
         return resposta.text.strip()
     except Exception as e:
-        print(f"Erro na IA: {e}")
-        return "Dica do professor: Verifique a documentação HTML sobre este elemento para o corrigir."
-
-# ... (MANTENHA O RESTO DO SEU CÓDIGO INTACTO A PARTIR DAQUI) ...
+        print(f"Erro na IA ({regra_id}): {e}")
+        # Se a cota estourar (429), ele devolve uma dica genérica amigável em vez de quebrar!
+        return "Dica do professor: Dê uma olhada na documentação HTML sobre este elemento. A estrutura precisa de ajustes de acessibilidade."
 
 @app.get("/")
 def home():
@@ -79,25 +89,19 @@ async def analisar(url: str):
             violation_data = results.response.get("violations", [])
             relatorio_limpo = []
             
-            # --- ESTRATÉGIA DE CACHE DO SÊNIOR ---
-            # Vamos guardar as dicas já pedidas para não perguntar a mesma coisa duas vezes ao Google
             dicas_cache = {}
             
-            # LOOP 1: Passa por cada Regra de Acessibilidade violada
             for erro in violation_data:
                 regra_id = erro["id"]
                 descricao = erro.get("description", "Sem descrição")
                 ajuda = erro.get("help", "Sem ajuda")
                 
-                # Verifica se já perguntamos sobre esta regra. Se não, pergunta e pausa.
                 if regra_id not in dicas_cache:
                     dicas_cache[regra_id] = await obter_dica_ia(regra_id, descricao, ajuda)
-                    await asyncio.sleep(4) # Pausa apenas quando fazemos uma nova requisição
+                    await asyncio.sleep(2) # Pausa reduzida para 2s
                 
-                # Pegamos a dica salva (seja a recém-baixada ou a que já estava no cache)
                 dica_do_professor = dicas_cache[regra_id]
                 
-                # LOOP 2: Passa por CADA ELEMENTO HTML
                 for node in erro.get("nodes", []):
                     relatorio_limpo.append({
                         "id": regra_id,
