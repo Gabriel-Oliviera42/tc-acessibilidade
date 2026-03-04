@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+playwright
+axe-playwright-python
+google-genai
+python-dotenv
