@@ -1,0 +1,12 @@
+# Pastas pesadas que o servidor baixa sozinho depois
+node_modules/
+__pycache__/
+venv/
+env/
+
+# Arquivos de ambiente com senhas e chaves de API (NUNCA suba isso!)
+.env
+
+# Lixos do sistema operacional
+.DS_Store
+Thumbs.db
