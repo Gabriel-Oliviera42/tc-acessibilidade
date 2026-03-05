@@ -31,7 +31,7 @@ function App() {
     setResultado(null)   // Limpa resultados anteriores
 
     try {
-      const response = await axios.get(`https://api-acessibilidade.onrender.com/analisar?url=${urlTratada}`)
+      const response = await axios.get(`http://localhost:8000/analisar?url=${urlTratada}`)
       
       // PASSO 2: Escudo Anti-Crash. Se o Python devolver {"error": "..."}
       if (response.data.error) {
