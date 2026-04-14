@@ -2,5 +2,7 @@ fastapi
 uvicorn
 playwright
 axe-playwright-python
-google-genai
-python-dotenv
+google-generativeai
+pydantic
+pymongo[srv]
+tenacity==9.1.4

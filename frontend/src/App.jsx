@@ -1,133 +1,172 @@
-import { useState } from 'react'
+// --- ÁREA DE IMPORTAÇÕES ---
+// Trazemos as ferramentas que o React e nosso projeto precisam para funcionar.
+import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
-import './App.css'
+import ReactMarkdown from 'react-markdown'
+import Header from './components/Header'
+import Sidebar from './components/Sidebar'
+import ChatWidget from './components/ChatWidget'
+
+// Importamos a ferramenta que permite dividir e arrastar a tela
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
 
 function App() {
+  // --- ESTADOS (A MEMÓRIA DO APLICATIVO) ---
+  // O 'useState' guarda valores. Toda vez que um valor muda, o React atualiza a tela automaticamente.
   const [url, setUrl] = useState('')
   const [resultado, setResultado] = useState(null)
   const [carregando, setCarregando] = useState(false)
-  const [erroBackend, setErroBackend] = useState(null) // PASSO 2: Novo estado para capturar erros de conexão/site
+  const [erroBackend, setErroBackend] = useState(null)
 
-  // Adicionada a interrogação extra (resultado?.erros?.filter) para evitar Crash caso 'erros' não venha no JSON
+  // Estados exclusivos para o Chat da Inteligência Artificial
+  const [chatAberto, setChatAberto] = useState(false)
+  const [mensagens, setMensagens] = useState([
+    { autor: 'ia', texto: 'Olá! Sou seu assistente de acessibilidade.' }
+  ])
+  const [inputChat, setInputChat] = useState('')
+  const [chatCarregando, setChatCarregando] = useState(false)
+  
+  // Referência para o fim da lista de mensagens (usado para rolar a tela para baixo automaticamente)
+  const chatFimRef = useRef(null)
+
+  // 'useEffect' executa uma ação automaticamente quando algo acontece. 
+  // Aqui: "Toda vez que a lista de 'mensagens' mudar, role a tela do chat para o final".
+  useEffect(() => {
+    chatFimRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [mensagens])
+
+  // Cria um objeto contando quantos erros de cada tipo existem para enviar à Sidebar
   const contagem = {
     critical: resultado?.erros?.filter(e => e.impacto === 'critical').length || 0,
     serious: resultado?.erros?.filter(e => e.impacto === 'serious').length || 0,
     moderate: resultado?.erros?.filter(e => e.impacto === 'moderate').length || 0,
-    minor: resultado?.erros?.filter(e => e.impacto === 'minor').length || 0, // Adicionado Minor
+    minor: resultado?.erros?.filter(e => e.impacto === 'minor').length || 0,
   }
 
+  // --- FUNÇÕES DO SISTEMA ---
+
+  // Função que envia a URL para o Python analisar
   const analisarSite = async () => {
-    if (!url) return alert("Please enter a URL first!")
+    if (!url) return alert("Por favor, digite uma URL primeiro!")
     
-    // PASSO 3: Tratamento Inteligente de URL (Sanitização)
+    // Garante que a URL comece com http ou https
     let urlTratada = url.trim()
     if (!urlTratada.startsWith('http://') && !urlTratada.startsWith('https://')) {
       urlTratada = 'https://' + urlTratada
-      setUrl(urlTratada) // Atualiza o input visualmente para o usuário
+      setUrl(urlTratada)
     }
 
     setCarregando(true)
-    setErroBackend(null) // Limpa erros anteriores
-    setResultado(null)   // Limpa resultados anteriores
+    setErroBackend(null)
+    setResultado(null) 
 
     try {
-      const response = await axios.get(`http://localhost:8000/analisar?url=${urlTratada}`)
-      
-      // PASSO 2: Escudo Anti-Crash. Se o Python devolver {"error": "..."}
+      const response = await axios.get(`/analisar?url=${urlTratada}`)
       if (response.data.error) {
         setErroBackend(response.data.error)
       } else {
-        setResultado(response.data)
+        setResultado(response.data) // Salva o resultado na memória
       }
-
     } catch (error) {
-      console.error("Error analyzing:", error)
-      setErroBackend("Error connecting to the server. Check if the Backend (Python) is running.")
+      console.error(error);
+      setErroBackend("Erro ao conectar com o servidor Python.")
+    } finally {
+      setCarregando(false)
     }
-    setCarregando(false)
   }
 
-  return (
-    <div className="container">
-      <header className="cabecalho">
-        <h1>WAVE Clone</h1>
-        <p>Web Accessibility Evaluator (WCAG)</p>
-      </header>
+  // Função que envia a pergunta digitada para a IA (Gemini)
+  const enviarMensagemIA = async (textoUsuario) => {
+    if (!textoUsuario.trim()) return
+
+    // Coloca a mensagem do usuário na tela e limpa o campo de texto
+    setMensagens(prev => [...prev, { autor: 'usuario', texto: textoUsuario }])
+    setInputChat('')
+    setChatCarregando(true)
+
+    try {
+      const response = await axios.post(`/chat`, { mensagem: textoUsuario })
+      const respostaDaIA = response.data.resposta;
       
-      <div className="busca">
-        <input 
-          type="text" 
-          placeholder="Enter URL. Ex: https://www.google.com" 
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-        <button onClick={analisarSite} disabled={carregando}>
-          {carregando ? 'Analyzing...' : 'Analyze'}
-        </button>
-      </div>
+      let textoParaMostrar = respostaDaIA.status === "sucesso" ? respostaDaIA.dados : "⚠️ " + respostaDaIA.mensagem; 
+      
+      // Coloca a resposta da IA na tela
+      setMensagens(prev => [...prev, { autor: 'ia', texto: textoParaMostrar }])
+    } catch (error) {
+      console.error(error);
+      setMensagens(prev => [...prev, { autor: 'ia', texto: "❌ Erro de conexão com a IA." }])
+    } finally {
+      setChatCarregando(false)
+    }
+  }
 
-      {carregando && (
-        <div className="alerta-carregando">
-          <p>The engine is analyzing the site code. This might take a few seconds...</p>
-        </div>
-      )}
+  // Função chamada pela Sidebar quando você clica em perguntar sobre um erro específico
+  const perguntarSobreErro = (erro) => {
+    setChatAberto(true) // Abre a janelinha do chat primeiro
+    const prompt = `Encontrei este erro: "${erro.descricao}". Elemento afetado: ${erro.elemento_html}. Como resolvo?`
+    enviarMensagemIA(prompt)
+  }
 
-      {/* NOVO: Exibe o erro de forma elegante se o backend falhar */}
-      {erroBackend && !carregando && (
-        <div className="alerta-erro-backend">
-          <h2>Analysis Failed</h2>
-          <p>We couldn't analyze the requested URL. Reason:</p>
-          <code>{erroBackend}</code>
-        </div>
-      )}
+  // --- DESENHO DA TELA (HTML/JSX) ---
+  return (
+    // Caixa principal que ocupa 100% da altura (h-screen)
+    <div className="h-screen w-screen flex flex-col font-sans">
+      
+      {/* 1. O CABEÇALHO */}
+      {/* Passamos para o Header as memórias e funções que ele precisa para funcionar */}
+      <Header 
+        url={url} 
+        setUrl={setUrl} 
+        analisarSite={analisarSite} 
+        carregando={carregando} 
+      />
 
-      {/* Renderiza os resultados apenas se existir 'resultado' e não houver erro */}
-      {resultado && !resultado.error && !carregando && (
-        <div className="resultados">
-          <h2>Report for: <span className="url-destaque">{resultado.url}</span></h2>
+      {/* 2. ÁREA DIVIDIDA (Abaixo do cabeçalho) */}
+      {/* PanelGroup avisa que teremos painéis lado a lado (horizontal) */}
+      <PanelGroup direction="horizontal" className="flex-1">
+        
+        {/* PAINEL ESQUERDO (Começa ocupando 100% do espaço disponível) */}
+        <Panel defaultSize={100} className="flex">
           
-          <div className="resumo-cards">
-            <div className="resumo-item critico">
-              <span className="numero">{contagem.critical}</span>
-              <span className="rotulo">Critical</span>
-            </div>
-            <div className="resumo-item serio">
-              <span className="numero">{contagem.serious}</span>
-              <span className="rotulo">Serious</span>
-            </div>
-            <div className="resumo-item moderado">
-              <span className="numero">{contagem.moderate}</span>
-              <span className="rotulo">Moderate</span>
-            </div>
-            {/* NOVO: Card para os erros Minor */}
-            <div className="resumo-item menor">
-              <span className="numero">{contagem.minor}</span>
-              <span className="rotulo">Minor</span>
-            </div>
-          </div>
+          <Sidebar 
+            resultado={resultado} 
+            contagem={contagem} 
+            perguntarSobreErro={perguntarSobreErro} 
+          />
 
-          <h3 className="titulo-lista">Total problems found: {resultado.total_erros}</h3>
+          {/* Área central simples que mostra os status da análise */}
+          <main className="flex-1 p-4 overflow-y-auto">
+            {carregando && <p>⏳ Analisando o site...</p>}
+            {erroBackend && !carregando && <p style={{color: 'red'}}>Erro: {erroBackend}</p>}
+            {!carregando && !erroBackend && !resultado && <p>Digite uma URL no topo e clique em Analisar.</p>}
+          </main>
+          
+        </Panel>
 
-          <div className="lista-erros">
-            {resultado.erros.map((erro, index) => (
-              <div key={index} className={`card ${erro.impacto}`}>
-                <h3>{erro.ajuda}</h3>
-                
-                <div className="detalhes-erro">
-                  <p><strong>Impact Level:</strong> <span className={`tag-impacto ${erro.impacto}`}>{erro.impacto}</span></p>
-                  <p><strong>Problem Description:</strong> {erro.descricao}</p>
-                  <p><strong>How to Fix:</strong> {erro.sugestao}</p>
-                </div>
-                
-                <div className="codigo-fonte">
-                  <p><strong>Affected HTML Element:</strong></p>
-                  <code>{erro.elemento_html}</code>
-                </div>
-              </div>
-            ))}
+        {/* A BARRINHA DE ARRASTAR */}
+        <PanelResizeHandle className="w-2 bg-gray-300 hover:bg-gray-400 cursor-col-resize" />
+
+        {/* PAINEL DIREITO (Começa escondido - tamanho 0) */}
+        <Panel defaultSize={0}>
+          <div className="h-full bg-gray-200 p-4">
+            <p>Área da Imagem do Site</p>
           </div>
-        </div>
-      )}
+        </Panel>
+
+      </PanelGroup>
+      
+      {/* 3. WIDGET DO CHAT (Todo aquele código visual agora mora em outro arquivo!) */}
+      <ChatWidget 
+        chatAberto={chatAberto}
+        setChatAberto={setChatAberto}
+        mensagens={mensagens}
+        inputChat={inputChat}
+        setInputChat={setInputChat}
+        enviarMensagemIA={enviarMensagemIA}
+        chatCarregando={chatCarregando}
+        chatFimRef={chatFimRef}
+      />
+
     </div>
   )
 }
