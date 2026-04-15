@@ -61,17 +61,45 @@ function App() {
     setResultado(null) 
 
     try {
-      const response = await axios.get(`/analisar?url=${urlTratada}`)
-      if (response.data.error) {
-        setErroBackend(response.data.error)
-      } else {
-        setResultado(response.data) // Salva o resultado na memória
+      // 1. Correção do 405: Usando POST e enviando como JSON
+      const response = await axios.post(`/analisar`, { url: urlTratada })
+      
+      // Pega o ticket da fila que o backend devolveu
+      const ticketId = response.data.ticket_id
+      
+      if (!ticketId) {
+        setErroBackend("Não foi possível gerar um ticket de análise.")
+        setCarregando(false)
+        return
       }
+
+      // 2. Lógica de "Polling": Fica checando o status a cada 2 segundos
+      let finalizado = false
+      while (!finalizado) {
+        // Pausa de 2 segundos para não sobrecarregar o servidor
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Pergunta pro backend o status do nosso ticket
+        const statusResponse = await axios.get(`/analisar/status/${ticketId}`)
+        const statusAtual = statusResponse.data.status
+
+        if (statusAtual === "Concluído!") {
+          // Uhul! Terminou. Salva o resultado e sai do loop.
+          setResultado(statusResponse.data.resultado)
+          finalizado = true
+        } else if (statusAtual === "Erro crítico ao processar o site.") {
+          // Deu ruim na análise.
+          setErroBackend("Erro ao processar o site. Verifique os logs do worker.")
+          finalizado = true
+        }
+        // Se o status for "Na fila..." ou "Processando...", o loop repete silenciosamente.
+      }
+
     } catch (error) {
-      console.error(error);
+      console.error(error)
       setErroBackend("Erro ao conectar com o servidor Python.")
     } finally {
-      setCarregando(false)
+      setCarregando(false) // Tira a mensagem de "Analisando..." da tela
     }
   }
 

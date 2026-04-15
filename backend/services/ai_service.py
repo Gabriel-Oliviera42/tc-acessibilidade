@@ -1,10 +1,10 @@
 import time          
 import os            
 from datetime import datetime, timezone, timedelta
-import google.generativeai as genai 
+from google import genai
 
 # Conexão com o banco de dados
-from database import colecao_cache_ia 
+from database import colecao_cache_ia
 
 # biblioteca para poder ficar rodando denovo e denovo
 from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_exception
@@ -13,8 +13,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_i
 API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # configura o Google se a chave existir. 
-if API_KEY:
-    genai.configure(api_key=API_KEY)
+client = genai.Client(api_key=API_KEY) if API_KEY else None
 
 # 1. Busca a variável no .env. Se o usuário (você) esquecer de criar no .env, ele usa a string padrão com os dois flash.
 modelos_env = os.getenv("GEMINI_MODELOS", "gemini-2.5-flash,gemini-1.5-flash")
@@ -30,7 +29,6 @@ for modelo in lista_suja:
         MODELOS_PERMITIDOS.append(modelo_limpo)
 
 # O resultado final na variável MODELOS_PERMITIDOS será: ['gemini-2.5-flash', 'gemini-1.5-flash']
-
 
 PROMPT_SISTEMA = """Aja como especialista em WCAG. 
 
@@ -51,6 +49,7 @@ REGRA DE RESPOSTA:
 
 2. Se for uma dúvida geral ou bate-papo, responda naturalmente de forma clara e concisa, ignorando o formato acima."""
 
+
 # pega o horario de agora
 def get_hora_formatada() -> str:
     fuso_br = timezone(timedelta(hours=-3))
@@ -62,7 +61,6 @@ def log_IA(mensagem: str) -> None:
 
 # função para ficar olhando se deu erro de tentatias no retry
 def erro_de_limite(exception: Exception) -> bool:
-
     erro_str = str(exception).lower()
     eh_limite = "429" in erro_str or "quota" in erro_str
     if eh_limite:
@@ -78,11 +76,13 @@ def erro_de_limite(exception: Exception) -> bool:
     reraise=True                                        
 )
 
-# chama a api do gemini de maneira asincrona
+# chama a api do gemini de maneira asincrona (ATUALIZADO PARA A NOVA SDK)
 async def chamar_api_gemini_async(modelo_escolhido: str, prompt_final: str):
-    model = genai.GenerativeModel(modelo_escolhido)
     # O "await" diz: "Servidor, vai atender outras pessoas, eu te aviso quando o Google responder".
-    return await model.generate_content_async(prompt_final)
+    return await client.aio.models.generate_content(
+        model=modelo_escolhido,
+        contents=prompt_final
+    )
 
 # funão principal
 async def gerar_resposta_chat(mensagem_usuario: str) -> dict:

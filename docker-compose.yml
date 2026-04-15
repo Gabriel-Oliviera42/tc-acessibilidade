@@ -28,3 +28,27 @@ services:
       - frontend
       - backend
     restart: always
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  # O "Trabalhador" que vai ler a fila e abrir o Chrome invisível
+  worker:
+    build: ./backend
+    # Esse comando liga o Celery no terminal do container
+    command: celery -A celery_app.celery_app worker --loglevel=info --concurrency=2
+    env_file:          
+      - ./backend/.env 
+    volumes:
+      - ./backend:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379/0
+      - C_FORCE_ROOT=1 # <-- Adicione isso para silenciar o aviso chato do Celery
+    depends_on:
+      - redis
+      - backend
+    restart: always
