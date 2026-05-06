@@ -28,8 +28,6 @@ for modelo in lista_suja:
     if modelo_limpo != "": # Se não for só um espaço em branco, salva na lista final
         MODELOS_PERMITIDOS.append(modelo_limpo)
 
-# O resultado final na variável MODELOS_PERMITIDOS será: ['gemini-2.5-flash', 'gemini-1.5-flash']
-
 PROMPT_SISTEMA = """Aja como especialista em WCAG. 
 
 REGRA DE RESPOSTA:

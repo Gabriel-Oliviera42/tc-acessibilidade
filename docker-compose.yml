@@ -1,12 +1,13 @@
 services:
   backend:
     build: ./backend
-    env_file:          
-      - ./backend/.env 
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/app
     environment:
       - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379/0
     restart: always
 
   frontend:
@@ -21,7 +22,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "8081:80" 
+      - "8081:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
@@ -39,9 +40,9 @@ services:
   worker:
     build: ./backend
     # Esse comando liga o Celery no terminal do container
-    command: celery -A celery_app.celery_app worker --loglevel=info --concurrency=2
-    env_file:          
-      - ./backend/.env 
+    command: celery -A celery_app worker --loglevel=info --concurrency=2
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/app
     environment:
