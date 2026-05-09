@@ -1,4 +1,5 @@
 import React from 'react';
+import { FileText, WarningCircle, Warning, Info, Lightbulb, ChatCircleDots } from "@phosphor-icons/react";
 
 export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
   
@@ -7,9 +8,7 @@ export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center max-w-md animate-fade-in">
           <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-xl flex items-center justify-center">
-            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+            <FileText size={40} weight="regular" className="text-gray-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-3 font-heading">Nenhuma análise realizada</h3>
           <p className="text-gray-600 font-body leading-relaxed">
@@ -48,9 +47,7 @@ export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
               <p className="text-3xl font-bold text-error font-heading">{contagem.critical}</p>
             </div>
             <div className="w-12 h-12 bg-error bg-opacity-10 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <WarningCircle size={24} weight="regular" className="text-error" />
             </div>
           </div>
         </div>
@@ -62,9 +59,7 @@ export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
               <p className="text-3xl font-bold text-warning font-heading">{contagem.serious}</p>
             </div>
             <div className="w-12 h-12 bg-warning bg-opacity-10 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Warning size={24} weight="regular" className="text-warning" />
             </div>
           </div>
         </div>
@@ -76,9 +71,7 @@ export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
               <p className="text-3xl font-bold text-success font-heading">{contagem.moderate}</p>
             </div>
             <div className="w-12 h-12 bg-success bg-opacity-10 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Info size={24} weight="regular" className="text-success" />
             </div>
           </div>
         </div>
@@ -90,9 +83,7 @@ export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
               <p className="text-3xl font-bold text-gray-600 font-heading">{contagem.minor}</p>
             </div>
             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Info size={24} weight="regular" className="text-gray-500" />
             </div>
           </div>
         </div>
@@ -141,9 +132,7 @@ export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
                 {erro.recomendacao && (
                   <div className="bg-primary-50 rounded-lg p-3 mb-4 border border-primary-200">
                     <div className="flex items-start space-x-2">
-                      <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <Lightbulb size={16} weight="regular" className="text-primary mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-xs font-semibold text-primary mb-1">Recomendação:</p>
                         <p className="text-xs text-gray-700">{erro.recomendacao}</p>
@@ -156,9 +145,7 @@ export default function Sidebar({ resultado, contagem, perguntarSobreErro }) {
                   onClick={() => perguntarSobreErro(erro)}
                   className="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-primary-light flex items-center justify-center space-x-2 font-body"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
+                  <ChatCircleDots size={16} weight="regular" className="text-white" />
                   <span>Consultar IA sobre este problema</span>
                 </button>
               </div>

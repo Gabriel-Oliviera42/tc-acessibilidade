@@ -1,8 +1,7 @@
 // --- ÁREA DE IMPORTAÇÕES ---
 // Trazemos as ferramentas que o React e nosso projeto precisam para funcionar.
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import axios from 'axios'
-import ReactMarkdown from 'react-markdown'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import ChatWidget from './components/ChatWidget'
@@ -19,22 +18,8 @@ function App() {
   const [carregando, setCarregando] = useState(false)
     const [panelSizes, setPanelSizes] = useState({ left: 100, right: 0 })
   
-  // Estados exclusivos para o Chat da Inteligência Artificial
-  const [chatAberto, setChatAberto] = useState(false)
-  const [mensagens, setMensagens] = useState([
-    { autor: 'ia', texto: 'Olá! Sou seu assistente especializado em acessibilidade web. Posso ajudar você a entender e resolver problemas de WCAG encontrados na análise. Como posso auxiliar hoje?' }
-  ])
-  const [inputChat, setInputChat] = useState('')
-  const [chatCarregando, setChatCarregando] = useState(false)
-  
-  // Referência para o fim da lista de mensagens (usado para rolar a tela para baixo automaticamente)
-  const chatFimRef = useRef(null)
-
-  // 'useEffect' executa uma ação automaticamente quando algo acontece. 
-  // Aqui: "Toda vez que a lista de 'mensagens' mudar, role a tela do chat para o final".
-  useEffect(() => {
-    chatFimRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [mensagens])
+  // Referência para o ChatWidget
+  const chatWidgetRef = useRef(null)
 
   // Cria um objeto contando quantos erros de cada tipo existem para enviar à Sidebar
   const contagem = {
@@ -104,51 +89,9 @@ function App() {
     }
   }
 
-  // Função que envia a pergunta digitada para a IA (Gemini)
-  const enviarMensagemIA = async (textoUsuario) => {
-    if (!textoUsuario.trim()) return
-
-    console.log("Enviando mensagem para IA:", textoUsuario)
-
-    // Coloca a mensagem do usuário na tela e limpa o campo de texto
-    setMensagens(prev => [...prev, { autor: 'usuario', texto: textoUsuario }])
-    setInputChat('')
-    setChatCarregando(true)
-
-    try {
-      console.log("Fazendo requisição para /chat...")
-      const response = await axios.post(`/chat`, { mensagem: textoUsuario })
-      console.log("Resposta recebida:", response.data)
-      
-      const respostaDaIA = response.data.resposta;
-      
-      let textoParaMostrar = respostaDaIA.status === "sucesso" ? respostaDaIA.dados : "Aviso: " + respostaDaIA.mensagem; 
-      
-      // Coloca a resposta da IA na tela
-      setMensagens(prev => [...prev, { autor: 'ia', texto: textoParaMostrar }])
-    } catch (error) {
-      console.error("Erro detalhado:", error)
-      console.error("Response:", error.response)
-      console.error("Request:", error.request)
-      
-      let mensagemErro = "Erro de conexão com a IA."
-      if (error.response) {
-        mensagemErro = `Erro ${error.response.status}: ${error.response.data?.detail || error.response.data?.message || 'Erro desconhecido'}`
-      } else if (error.request) {
-        mensagemErro = "Servidor não respondeu. Verifique se o backend está online."
-      }
-      
-      setMensagens(prev => [...prev, { autor: 'ia', texto: mensagemErro }])
-    } finally {
-      setChatCarregando(false)
-    }
-  }
-
   // Função chamada pela Sidebar quando você clica em perguntar sobre um erro específico
   const perguntarSobreErro = (erro) => {
-    setChatAberto(true) // Abre a janelinha do chat primeiro
-    const prompt = `Encontrei este erro: "${erro.descricao}". Elemento afetado: ${erro.elemento_html}. Como resolvo?`
-    enviarMensagemIA(prompt)
+    chatWidgetRef.current?.perguntarSobreErro(erro)
   }
 
   // --- DESENHO DA TELA (HTML/JSX) ---
@@ -219,17 +162,8 @@ function App() {
 
       </PanelGroup>
       
-      {/* 3. WIDGET DO CHAT (Todo aquele código visual agora mora em outro arquivo!) */}
-      <ChatWidget 
-        chatAberto={chatAberto}
-        setChatAberto={setChatAberto}
-        mensagens={mensagens}
-        inputChat={inputChat}
-        setInputChat={setInputChat}
-        enviarMensagemIA={enviarMensagemIA}
-        chatCarregando={chatCarregando}
-        chatFimRef={chatFimRef}
-      />
+      {/* 3. WIDGET DO CHAT */}
+      <ChatWidget ref={chatWidgetRef} />
 
     </div>
   )
