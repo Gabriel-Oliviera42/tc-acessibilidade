@@ -1,56 +1,54 @@
+// Importamos o React
 import React from 'react';
-import { MagnifyingGlass, CircleNotch, CheckCircle } from "@phosphor-icons/react";
 
+// O Header é como um "funcionário" do App.jsx. 
+// Para trabalhar, ele precisa receber ferramentas do chefe. Essas ferramentas são as "props":
+// - url: o texto atual que está guardado na memória.
+// - setUrl: o rádio comunicador para avisar o chefe que o usuário digitou uma letra nova.
+// - analisarSite: o botão de partida do motor.
+// - carregando: uma luzinha que avisa se o motor já está rodando.
 export default function Header({ url, setUrl, analisarSite, carregando }) {
   return (
-    <header className="bg-surface border-b border-gray-200 px-6 py-4 animate-fade-in">
-      <div className="max-w-full mx-auto flex items-center justify-between">
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-sm font-heading">TC</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-primary font-heading">Acessibilidade Web</h1>
-              <p className="text-sm text-gray-600 font-body">Análise Profissional de WCAG</p>
-            </div>
-          </div>
-        </div>
+    // 'flex' coloca os itens (input e botão) lado a lado na mesma linha.
+    // 'p-4' (padding) dá um respiro de espaço dentro da caixa.
+    // 'bg-gray-800' pinta o fundo de cinza escuro.
+    <header className="flex p-4 bg-gray-800">
+      
+      {/* 1. CAMPO DE DIGITAÇÃO */}
+      <input 
+        type="text" 
+        // O valor mostrado na tela é exatamente o que está na memória do App.jsx
+        value={url} 
         
-        <div className="flex items-center space-x-4 flex-1 max-w-2xl mx-8">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Digite a URL do site para análise..."
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-surface font-body text-gray-900 placeholder-gray-500"
-              onKeyPress={(e) => e.key === 'Enter' && analisarSite()}
-            />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <MagnifyingGlass size={20} weight="regular" className="text-gray-400" />
-            </div>
-          </div>
-          
-          <button
-            onClick={analisarSite}
-            disabled={carregando}
-            className="px-6 py-3 bg-primary text-white rounded-lg font-medium transition-colors flex items-center space-x-2 hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed font-body shadow-sm"
-          >
-            {carregando ? (
-              <>
-                <CircleNotch size={16} weight="regular" className="animate-spin" />
-                <span>Analisando</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle size={16} weight="regular" className="text-white" />
-                <span>Analisar</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+        // Toda vez que você aperta uma tecla (onChange), ele pega o valor do campo (e.target.value)
+        // e usa o comunicador (setUrl) para atualizar a memória principal.
+        onChange={(e) => setUrl(e.target.value)} 
+        
+        placeholder="Digite a URL..."
+        
+        // 'flex-1' manda o input crescer o máximo que puder, empurrando o botão para o canto.
+        // 'text-black' garante que a letra fique preta, já que o fundo do header é escuro.
+        className="flex-1 p-2 text-black"
+      />
+
+      {/* 2. BOTÃO DE AÇÃO */}
+      <button 
+        // Quando receber um clique, execute a função que o chefe mandou
+        onClick={analisarSite} 
+        
+        // Se a variável 'carregando' for verdadeira, desative (disabled) o botão.
+        // Isso impede que o usuário clique 10 vezes seguidas na mesma coisa.
+        disabled={carregando}
+        
+        // 'ml-4' (margin-left) cria um espaço à esquerda para não ficar colado no input.
+        className="ml-4 bg-blue-600 text-white px-4 py-2"
+      >
+        {/* Usamos um "if" resumido aqui: 
+            Se (carregando) for true -> Mostre 'Analisando...' 
+            Se não (:)             -> Mostre 'Analisar' */}
+        {carregando ? 'Analisando...' : 'Analisar'}
+      </button>
+
     </header>
   );
 }

@@ -1,11 +1,11 @@
 // --- ÁREA DE IMPORTAÇÕES ---
 // Trazemos as ferramentas que o React e nosso projeto precisam para funcionar.
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
+import ReactMarkdown from 'react-markdown'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import ChatWidget from './components/ChatWidget'
-import SitePreview from './components/SitePreview'
 
 // Importamos a ferramenta que permite dividir e arrastar a tela
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
@@ -16,10 +16,24 @@ function App() {
   const [url, setUrl] = useState('')
   const [resultado, setResultado] = useState(null)
   const [carregando, setCarregando] = useState(false)
-    const [panelSizes, setPanelSizes] = useState({ left: 100, right: 0 })
+  const [erroBackend, setErroBackend] = useState(null)
+
+  // Estados exclusivos para o Chat da Inteligência Artificial
+  const [chatAberto, setChatAberto] = useState(false)
+  const [mensagens, setMensagens] = useState([
+    { autor: 'ia', texto: 'Olá! Sou seu assistente de acessibilidade.' }
+  ])
+  const [inputChat, setInputChat] = useState('')
+  const [chatCarregando, setChatCarregando] = useState(false)
   
-  // Referência para o ChatWidget
-  const chatWidgetRef = useRef(null)
+  // Referência para o fim da lista de mensagens (usado para rolar a tela para baixo automaticamente)
+  const chatFimRef = useRef(null)
+
+  // 'useEffect' executa uma ação automaticamente quando algo acontece. 
+  // Aqui: "Toda vez que a lista de 'mensagens' mudar, role a tela do chat para o final".
+  useEffect(() => {
+    chatFimRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [mensagens])
 
   // Cria um objeto contando quantos erros de cada tipo existem para enviar à Sidebar
   const contagem = {
@@ -43,6 +57,7 @@ function App() {
     }
 
     setCarregando(true)
+    setErroBackend(null)
     setResultado(null) 
 
     try {
@@ -53,7 +68,7 @@ function App() {
       const ticketId = response.data.ticket_id
       
       if (!ticketId) {
-        alert("Não foi possível gerar um ticket de análise.")
+        setErroBackend("Não foi possível gerar um ticket de análise.")
         setCarregando(false)
         return
       }
@@ -71,11 +86,10 @@ function App() {
         if (statusAtual === "Concluído!") {
           // Uhul! Terminou. Salva o resultado e sai do loop.
           setResultado(statusResponse.data.resultado)
-          setPanelSizes({ left: 66.7, right: 33.3 })  // Esquerda 2/3, Direita 1/3
           finalizado = true
         } else if (statusAtual === "Erro crítico ao processar o site.") {
           // Deu ruim na análise.
-          alert("Erro ao processar o site. Verifique os logs do worker.")
+          setErroBackend("Erro ao processar o site. Verifique os logs do worker.")
           finalizado = true
         }
         // Se o status for "Na fila..." ou "Processando...", o loop repete silenciosamente.
@@ -83,21 +97,48 @@ function App() {
 
     } catch (error) {
       console.error(error)
-      alert("Erro ao conectar com o servidor Python.")
+      setErroBackend("Erro ao conectar com o servidor Python.")
     } finally {
       setCarregando(false) // Tira a mensagem de "Analisando..." da tela
     }
   }
 
+  // Função que envia a pergunta digitada para a IA (Gemini)
+  const enviarMensagemIA = async (textoUsuario) => {
+    if (!textoUsuario.trim()) return
+
+    // Coloca a mensagem do usuário na tela e limpa o campo de texto
+    setMensagens(prev => [...prev, { autor: 'usuario', texto: textoUsuario }])
+    setInputChat('')
+    setChatCarregando(true)
+
+    try {
+      const response = await axios.post(`/chat`, { mensagem: textoUsuario })
+      const respostaDaIA = response.data.resposta;
+      
+      let textoParaMostrar = respostaDaIA.status === "sucesso" ? respostaDaIA.dados : "⚠️ " + respostaDaIA.mensagem; 
+      
+      // Coloca a resposta da IA na tela
+      setMensagens(prev => [...prev, { autor: 'ia', texto: textoParaMostrar }])
+    } catch (error) {
+      console.error(error);
+      setMensagens(prev => [...prev, { autor: 'ia', texto: "❌ Erro de conexão com a IA." }])
+    } finally {
+      setChatCarregando(false)
+    }
+  }
+
   // Função chamada pela Sidebar quando você clica em perguntar sobre um erro específico
   const perguntarSobreErro = (erro) => {
-    chatWidgetRef.current?.perguntarSobreErro(erro)
+    setChatAberto(true) // Abre a janelinha do chat primeiro
+    const prompt = `Encontrei este erro: "${erro.descricao}". Elemento afetado: ${erro.elemento_html}. Como resolvo?`
+    enviarMensagemIA(prompt)
   }
 
   // --- DESENHO DA TELA (HTML/JSX) ---
   return (
     // Caixa principal que ocupa 100% da altura (h-screen)
-    <div className="h-screen w-screen flex flex-col font-sans bg-main">
+    <div className="h-screen w-screen flex flex-col font-sans">
       
       {/* 1. O CABEÇALHO */}
       {/* Passamos para o Header as memórias e funções que ele precisa para funcionar */}
@@ -112,58 +153,47 @@ function App() {
       {/* PanelGroup avisa que teremos painéis lado a lado (horizontal) */}
       <PanelGroup direction="horizontal" className="flex-1">
         
-        {/* PAINEL ESQUERDO (Sidebar + Status) */}
-        <Panel 
-          defaultSize={panelSizes.left} 
-          minSize={33.3} 
-          maxSize={100} 
-          className="h-full"
-          onResize={(size) => {
-            if (size < 33.3) {
-              // Se esquerda ficar muito pequena, fecha painel direito
-              setPanelSizes({ left: 100, right: 0 })
-            }
-          }}
-        >
+        {/* PAINEL ESQUERDO (Começa ocupando 100% do espaço disponível) */}
+        <Panel defaultSize={100} className="flex">
+          
           <Sidebar 
             resultado={resultado} 
             contagem={contagem} 
             perguntarSobreErro={perguntarSobreErro} 
           />
+
+          {/* Área central simples que mostra os status da análise */}
+          <main className="flex-1 p-4 overflow-y-auto">
+            {carregando && <p>⏳ Analisando o site...</p>}
+            {erroBackend && !carregando && <p style={{color: 'red'}}>Erro: {erroBackend}</p>}
+            {!carregando && !erroBackend && !resultado && <p>Digite uma URL no topo e clique em Analisar.</p>}
+          </main>
+          
         </Panel>
 
         {/* A BARRINHA DE ARRASTAR */}
-        <PanelResizeHandle className="flex items-center justify-center w-3 hover:bg-gray-100 cursor-col-resize group">
-          <div className="w-2 h-8 bg-gray-300 rounded-full group-hover:bg-gray-400 transition-colors flex items-center justify-center">
-            <div className="text-xs text-gray-500 group-hover:text-gray-600">
-              ⋮⋮
-            </div>
-          </div>
-        </PanelResizeHandle>
+        <PanelResizeHandle className="w-2 bg-gray-300 hover:bg-gray-400 cursor-col-resize" />
 
-        {/* PAINEL DIREITO (Preview do site) */}
-        <Panel 
-          defaultSize={panelSizes.right} 
-          minSize={0} 
-          maxSize={100} 
-          className="h-full relative z-10"
-          onResize={(size) => {
-            if (size < 15) {
-              // Se direito ficar muito pequeno, fecha automaticamente
-              setPanelSizes({ left: 100, right: 0 })
-            } else if (size > 66.7) {
-              // Se direito ficar muito grande, permite sobrepor esquerda
-              setPanelSizes({ left: 33.3, right: 66.7 })
-            }
-          }}
-        >
-          <SitePreview resultado={resultado} />
+        {/* PAINEL DIREITO (Começa escondido - tamanho 0) */}
+        <Panel defaultSize={0}>
+          <div className="h-full bg-gray-200 p-4">
+            <p>Área da Imagem do Site</p>
+          </div>
         </Panel>
 
       </PanelGroup>
       
-      {/* 3. WIDGET DO CHAT */}
-      <ChatWidget ref={chatWidgetRef} />
+      {/* 3. WIDGET DO CHAT (Todo aquele código visual agora mora em outro arquivo!) */}
+      <ChatWidget 
+        chatAberto={chatAberto}
+        setChatAberto={setChatAberto}
+        mensagens={mensagens}
+        inputChat={inputChat}
+        setInputChat={setInputChat}
+        enviarMensagemIA={enviarMensagemIA}
+        chatCarregando={chatCarregando}
+        chatFimRef={chatFimRef}
+      />
 
     </div>
   )

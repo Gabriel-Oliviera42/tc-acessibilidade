@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "motion": "^12.38.0",
-    "react-syntax-highlighter": "^16.1.1"
-  }
-}
