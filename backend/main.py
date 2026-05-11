@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from celery.result import AsyncResult
+from core.config import settings
 
 # Importando nossos serviços
 from services.ai_service import gerar_resposta_chat
@@ -12,7 +13,7 @@ app = FastAPI(title="Motor de Acessibilidade e IA")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
