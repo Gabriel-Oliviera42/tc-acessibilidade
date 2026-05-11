@@ -1,6 +1,7 @@
 import time
 import urllib.parse
 import json
+from core.config import settings
 from datetime import datetime, timezone, timedelta
 
 # ferramenta para abrir um "navegador fantasma" por debaixo dos panos
@@ -55,22 +56,29 @@ async def executar_analise_completa(url: str):
             
             # regra para não baixar imagens, fontes ou videos para economizar
             async def interceptar_rotas(route):
-                if route.request.resource_type in ["image", "media", "font", "websocket"]:
-                    await route.abort() 
+                if route.request.resource_type in settings.blocked_resource_types:
+                    await route.abort()
                 else:
-                    await route.continue_() 
+                    await route.continue_()
             
             await page.route("**/*", interceptar_rotas)
 
             t_passo = time.time()
             log_motor("Disparando requisicao ao dominio...")
             
+            timeout_segundos = settings.analysis_timeout_ms // 1000
+            
             try:
                 # tento entrar no site
-                resposta_pagina = await page.goto(url, wait_until="load", timeout=45000)
+                resposta_pagina = await page.goto(
+                    url,
+                    wait_until="load",
+                    timeout=settings.analysis_timeout_ms
+                )
             except PlaywrightTimeoutError:
                 log_motor("TIMEOUT FATAL: Servidor alvo nao carregou em 45s.")
-                return {"error": "O site demorou mais de 45 segundos para responder."}
+                return {"error": f"O site demorou mais de {timeout_segundos} segundos para responder."}
+            
             except Exception as e:
                 log_motor(f"FALHA DE REDE: {str(e)}")
                 return {"error": f"Não foi possível acessar o site. Detalhe: {str(e)}"}
