@@ -32,8 +32,6 @@ services:
 
   redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
     restart: always
 
   # O "Trabalhador" que vai ler a fila e abrir o Chrome invisível
