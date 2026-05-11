@@ -1,9 +1,7 @@
-import os
 from pymongo import MongoClient
 from datetime import datetime
 
-# pego oque eu preciso para entrar no banco de dados, que estou guardando no .env
-MONGO_URI = os.getenv("MONGO_URI")
+from core.config import settings
 
 # Função para pegar o horario atual
 def get_hora_formatada():
@@ -16,7 +14,7 @@ def log_banco(mensagem):
 def get_database():
 
     # Teste de segurança: Verifica se a variável do .env realmente existe e foi carregada
-    if not MONGO_URI:
+    if not settings.mongo_uri:
         log_banco("AVISO: MONGO_URI não encontrada no .env. O banco rodará desativado.")
         return None
 
@@ -26,7 +24,7 @@ def get_database():
         t_inicio = datetime.now()
         
         # Inicia a configuração do cliente MongoDB e desiste de conectar em 5 segundos para não travar a API
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        client = MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=5000)
         log_banco("Inicia a configuração do cliente MongoDB de até 5 segundos")
         
         # Isso força essa conexão agora, servindo para conectar de verdade antes de pedir alguma coisa.
@@ -36,7 +34,7 @@ def get_database():
         log_banco("Iniciando conexão com o MongoDB Atlas...")
 
         # Seleciona qual banco de dados vamos usar lá dentro do Mongo Atlas
-        nome_do_banco = "waveclone_db" # só para depois escrever no terminal
+        nome_do_banco = settings.mongo_db_name # só para depois escrever no terminal
         db = client[nome_do_banco]
         log_banco(f"Banco encontrado! Entrando no banco de dados específico: '{nome_do_banco}'")
         
