@@ -58,23 +58,48 @@ async def solicitar_analise(req: AnaliseRequest):
 
 @app.get("/analisar/status/{ticket_id}")
 async def checar_status_analise(ticket_id: str):
-    # Consulta no Celery/Redis como está essa tarefa
     resultado_tarefa = AsyncResult(ticket_id)
 
     if resultado_tarefa.state == "PENDING":
-        return {"status": "Na fila aguardando sua vez..."}
+        return {
+            "status": "Na fila aguardando sua vez...",
+            "estado": "PENDING"
+        }
 
     elif resultado_tarefa.state == "STARTED":
-        return {"status": "Processando... O robô está lendo o site agora!"}
+        return {
+            "status": "Processando... O robô está lendo o site agora!",
+            "estado": "STARTED"
+        }
+
+    elif resultado_tarefa.state == "PROGRESS":
+        progresso = resultado_tarefa.info
+
+        if not isinstance(progresso, dict):
+            progresso = {}
+
+        return {
+            "status": progresso.get("mensagem", "Processando análise..."),
+            "estado": "PROGRESS",
+            "etapa": progresso.get("etapa", "processando")
+        }
 
     elif resultado_tarefa.state == "SUCCESS":
         return {
             "status": "Concluído!",
+            "estado": "SUCCESS",
             "resultado": resultado_tarefa.result
         }
 
     elif resultado_tarefa.state == "FAILURE":
-        return {"status": "Erro crítico ao processar o site."}
+        return {
+            "status": "Erro crítico ao processar o site.",
+            "estado": "FAILURE",
+            "erro": str(resultado_tarefa.info)
+        }
 
     else:
-        return {"status": resultado_tarefa.state}
+        return {
+            "status": resultado_tarefa.state,
+            "estado": resultado_tarefa.state
+        }
