@@ -1,26 +1,22 @@
+import json
 import time
 import urllib.parse
-import json
-from core.config import settings
 from datetime import datetime, timezone, timedelta
 
-# ferramenta para abrir um "navegador fantasma" por debaixo dos panos
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
-# regras de acessibilidade (WCAG)
 from axe_playwright_python.async_playwright import Axe
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
-# conexão com o banco de dados
+from core.config import settings
+from core.logging_config import get_logger
 from database import colecao_analises
 
-# pego o horario de agora com milissegundos
-def get_hora_formatada() -> str:
-    fuso_br = timezone(timedelta(hours=-3))
-    return datetime.now(fuso_br).strftime('%H:%M:%S')[:-3]
 
-# mensagem pronta sem os icones
+logger = get_logger("Analisador")
+
+
 def log_motor(mensagem: str) -> None:
-    print(f"[Analizando - {get_hora_formatada()}] {mensagem}")
-
+    logger.info(mensagem)
+    
 # robô de busca
 async def executar_analise_completa(url: str):
     tempo_inicio_total = time.time() # Ligo o cronômetro
@@ -76,7 +72,7 @@ async def executar_analise_completa(url: str):
                     timeout=settings.analysis_timeout_ms
                 )
             except PlaywrightTimeoutError:
-                log_motor("TIMEOUT FATAL: Servidor alvo nao carregou em 45s.")
+                log_motor(f"TIMEOUT FATAL: Servidor alvo nao carregou em {timeout_segundos}s.")
                 return {"error": f"O site demorou mais de {timeout_segundos} segundos para responder."}
             
             except Exception as e:
