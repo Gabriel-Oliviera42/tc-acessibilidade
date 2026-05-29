@@ -1,3 +1,5 @@
+import { Search } from 'lucide-react'
+
 export default function UrlAnalyzerForm({
   url,
   setUrl,
@@ -27,8 +29,9 @@ export default function UrlAnalyzerForm({
       <button
         type="submit"
         disabled={carregando}
-        className="min-h-12 rounded-lg bg-blue-700 px-5 text-base font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-blue-300"
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 text-base font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-blue-300"
       >
+        <Search size={18} aria-hidden="true" />
         {carregando ? 'Analisando...' : 'Analisar'}
       </button>
     </form>

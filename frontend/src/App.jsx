@@ -7,6 +7,7 @@ import ChatWidget from './components/ChatWidget'
 import IssueList from './components/IssueList'
 import ProjectFooter from './components/ProjectFooter'
 import UrlAnalyzerForm from './components/UrlAnalyzerForm'
+import { Camera, CheckCircle2, ListChecks, WandSparkles } from 'lucide-react'
 
 function App() {
   const [url, setUrl] = useState('')
@@ -153,7 +154,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-950">
+    <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-950">
       <AppHeader onSoon={mostrarRecursoFuturo} />
 
       {avisoInterface && (
@@ -164,15 +165,14 @@ function App() {
 
       {telaInicial ? (
         <>
-          <main className="mx-auto flex min-h-[calc(100vh-17rem)] w-full max-w-6xl flex-col justify-center px-4 py-10 sm:px-6">
+          <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-10 sm:px-6">
             <section className="mx-auto w-full max-w-4xl text-center">
-              <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Acessibilidade digital</p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-normal text-slate-950 sm:text-5xl">
-                Analise a acessibilidade de um site em poucos minutos
+              <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-normal text-slate-950 sm:text-5xl">
+                Teste a acessibilidade do seu site
               </h1>
               <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600">
-                Informe uma URL publica para identificar problemas de acessibilidade, entender prioridades
-                e pedir ajuda da IA para corrigir os pontos encontrados.
+                Informe uma URL publica para receber um relatorio organizado, entender o que precisa
+                de atencao e pedir ajuda da IA para corrigir os pontos encontrados.
               </p>
 
               <div className="mt-8">
@@ -184,11 +184,22 @@ function App() {
                 />
               </div>
 
-              <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs font-semibold text-slate-600">
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">WCAG</span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">AxeCore</span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Playwright</span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">IA assistiva</span>
+              <div className="mx-auto mt-6 grid max-w-3xl gap-3 text-left sm:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 bg-white p-3">
+                  <CheckCircle2 size={18} className="text-blue-700" aria-hidden="true" />
+                  <p className="mt-2 text-sm font-semibold text-slate-950">Analise automatica</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">O sistema carrega a pagina e procura problemas comuns.</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-white p-3">
+                  <ListChecks size={18} className="text-blue-700" aria-hidden="true" />
+                  <p className="mt-2 text-sm font-semibold text-slate-950">Relatorio claro</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">Os achados aparecem por gravidade e elemento afetado.</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-white p-3">
+                  <WandSparkles size={18} className="text-blue-700" aria-hidden="true" />
+                  <p className="mt-2 text-sm font-semibold text-slate-950">Ajuda com IA</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">Peça explicacoes e exemplos de correcao quando precisar.</p>
+                </div>
               </div>
             </section>
           </main>
@@ -197,7 +208,7 @@ function App() {
         </>
       ) : (
         <>
-          <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
             <section className="mb-5 rounded-lg border border-slate-200 bg-white p-4">
               <UrlAnalyzerForm
                 url={url}
@@ -210,7 +221,7 @@ function App() {
 
             <AnalysisSummary resultado={resultado} contagem={contagem} />
 
-            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
               <div className="space-y-5">
                 <AnalysisStatus statusAnalise={statusAnalise} erroBackend={erroBackend} />
                 <IssueList resultado={resultado} perguntarSobreErro={perguntarSobreErro} />
@@ -218,28 +229,20 @@ function App() {
 
               <aside className="space-y-5">
                 <section className="rounded-lg border border-slate-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-slate-950">Previa do site</p>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                    <Camera size={17} className="text-blue-700" aria-hidden="true" />
+                    Visual do site
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Esta area esta reservada para uma captura feita pelo Playwright em uma etapa futura.
+                    Em uma etapa futura, este painel pode mostrar uma captura da pagina analisada
+                    para ajudar a localizar os problemas no contexto visual.
                   </p>
-                </section>
-
-                <section className="rounded-lg border border-slate-200 bg-white p-4">
-                  <p className="text-sm font-semibold text-slate-950">Assistente IA</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Use o chat para pedir explicacoes sobre erros e exemplos de correcao.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setChatAberto(true)}
-                    className="mt-4 w-full rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
-                  >
-                    Abrir assistente
-                  </button>
                 </section>
               </aside>
             </div>
           </main>
+
+          <ProjectFooter compact />
         </>
       )}
 

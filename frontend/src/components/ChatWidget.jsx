@@ -1,193 +1,157 @@
-// --- IMPORTAÇÕES ---
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import { Bot, Check, Copy, Send, Sparkles, X } from 'lucide-react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-// Ferramentas para deixar o código colorido e com tema escuro (estilo VS Code/Notion)
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+const CodeBlock = ({ inline, className, children, ...props }) => {
+  const [copiado, setCopiado] = useState(false)
+  const match = /language-(\w+)/.exec(className || '')
+  const codigoLimpo = String(children).replace(/\n$/, '')
 
-// ============================================================================
-// COMPONENTE AUXILIAR: Bloco de Código Inteligente
-// Criamos isso fora do ChatWidget para que CADA bloco de código tenha seu 
-// próprio botão de "Copiar" funcionando de forma independente.
-// ============================================================================
-// eslint-disable-next-line no-unused-vars
-const CodeBlock = ({ node, inline, className, children, ...props }) => {
-  // Estado para controlar se o texto foi copiado recentemente
-  const [copiado, setCopiado] = useState(false);
-
-  // Descobre qual é a linguagem de programação que a IA mandou (ex: html, js, css)
-  const match = /language-(\w+)/.exec(className || '');
-  // Limpa quebras de linha extras no final do código
-  const codigoLimpo = String(children).replace(/\n$/, '');
-
-  // Função que copia o texto e muda o botão para "Copiado!" por 2 segundos
   const copiarParaAreaDeTransferencia = () => {
-    navigator.clipboard.writeText(codigoLimpo);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000); // Volta ao normal após 2s
-  };
+    navigator.clipboard.writeText(codigoLimpo)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2000)
+  }
 
-  // Se não for um código no meio da frase (inline) e tiver uma linguagem definida:
   if (!inline && match) {
     return (
-      // 'relative' e 'group' são os segredos aqui. O 'group' avisa o Tailwind que 
-      // quando passarmos o mouse nessa div inteira, elementos dentro dela podem reagir.
-      <div className="relative group mt-3 mb-3 rounded-lg overflow-hidden border border-slate-700 shadow-md">
-        
-        {/* O botão de copiar. 'opacity-0 group-hover:opacity-100' faz ele aparecer 
-            só quando passamos o mouse por cima do bloco de código. */}
-        <button 
+      <div className="group relative my-3 overflow-hidden rounded-lg border border-slate-700">
+        <button
+          type="button"
           onClick={copiarParaAreaDeTransferencia}
-          className="absolute top-2 right-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all z-10"
+          className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-md bg-slate-700 px-2 py-1 text-xs font-medium text-slate-100 opacity-0 transition group-hover:opacity-100"
         >
-          {copiado ? '✅ Copiado!' : '📋 Copiar'}
+          {copiado ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
+          {copiado ? 'Copiado' : 'Copiar'}
         </button>
 
-        {/* O componente que pinta o código com as cores do VS Code */}
-        <SyntaxHighlighter 
-          style={vscDarkPlus} 
-          language={match[1]} 
-          PreTag="div" 
-          // Ajustamos a margem interna para o botão não ficar em cima do código
+        <SyntaxHighlighter
+          style={vscDarkPlus}
+          language={match[1]}
+          PreTag="div"
           customStyle={{ margin: 0, padding: '1.5rem 1rem 1rem 1rem', fontSize: '0.85rem' }}
           {...props}
         >
           {codigoLimpo}
         </SyntaxHighlighter>
       </div>
-    );
+    )
   }
 
-  // Se for um código pequeno no meio do texto (ex: `<div>`), aplicamos um estilo simples
   return (
-    <code className="bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded text-[0.8em] font-mono" {...props}>
+    <code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[0.8em] text-slate-800" {...props}>
       {children}
     </code>
-  );
-};
+  )
+}
 
-
-// ============================================================================
-// COMPONENTE PRINCIPAL: O Widget do Chat
-// ============================================================================
-export default function ChatWidget({ 
-  chatAberto, 
-  setChatAberto, 
-  mensagens, 
-  inputChat, 
-  setInputChat, 
-  enviarMensagemIA, 
-  chatCarregando, 
-  chatFimRef 
+export default function ChatWidget({
+  chatAberto,
+  setChatAberto,
+  mensagens,
+  inputChat,
+  setInputChat,
+  enviarMensagemIA,
+  chatCarregando,
+  chatFimRef,
 }) {
   return (
-    // 'fixed z-50': Garante que o chat flutue acima de TUDO no site
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
-      
-      {/* 1. A JANELA DO CHAT */}
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end font-sans">
       {chatAberto && (
-        // Usamos 'animate-in slide-in-from-bottom-5' para o chat surgir subindo suavemente
-        <div className="w-80 sm:w-[400px] h-[550px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col mb-4 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
-          
-          {/* TOPO DO CHAT (Cabeçalho) */}
-          <div className="bg-slate-900 text-white px-5 py-4 flex justify-between items-center shadow-sm z-10">
+        <div className="mb-4 flex h-[540px] w-[min(calc(100vw-2rem),400px)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-600 p-1.5 rounded-lg">✨</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700 text-white">
+                <Bot size={18} aria-hidden="true" />
+              </div>
               <div>
-                <h3 className="font-semibold tracking-wide leading-tight">Assistente IA</h3>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Especialista WCAG</p>
+                <h3 className="text-sm font-semibold leading-tight text-slate-950">Assistente IA</h3>
+                <p className="text-xs text-slate-500">Ajuda para entender e corrigir erros</p>
               </div>
             </div>
-            <button 
+            <button
+              type="button"
               onClick={() => setChatAberto(false)}
-              className="text-slate-400 hover:text-white hover:rotate-90 transition-all duration-300 p-1"
+              className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+              aria-label="Fechar assistente"
             >
-              ✖
+              <X size={18} aria-hidden="true" />
             </button>
           </div>
 
-          {/* CORPO DO CHAT (Área das mensagens) */}
-          <div className="flex-1 p-4 overflow-y-auto bg-slate-50 flex flex-col gap-4">
-            
+          <div className="flex flex-1 flex-col gap-3 overflow-y-auto bg-slate-50 p-4">
             {mensagens.map((msg, index) => (
-              <div 
-                key={index} 
-                // A magia do layout: se for IA, alinha na esquerda ('self-start'). Se for usuário, direita ('self-end').
-                className={`max-w-[90%] p-3.5 text-sm shadow-sm animate-in fade-in slide-in-from-bottom-2 ${
-                  msg.autor === 'ia' 
-                    ? 'bg-white border border-slate-200 text-slate-800 self-start rounded-2xl rounded-tl-sm' 
-                    : 'bg-blue-600 text-white self-end rounded-2xl rounded-tr-sm'
+              <div
+                key={index}
+                className={`max-w-[92%] rounded-lg border p-3 text-sm shadow-sm ${
+                  msg.autor === 'ia'
+                    ? 'self-start border-slate-200 bg-white text-slate-800'
+                    : 'self-end border-blue-700 bg-blue-700 text-white'
                 }`}
               >
                 {msg.autor === 'ia' ? (
-                  // 'prose': Configura automaticamente as margens de parágrafos e listas (padrão do Tailwind)
-                  // Passamos nosso 'CodeBlock' customizado para o ReactMarkdown usar
                   <div className="prose prose-sm prose-slate max-w-none prose-p:leading-relaxed prose-pre:p-0">
                     <ReactMarkdown components={{ code: CodeBlock }}>
                       {msg.texto}
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  // Mensagem do usuário não precisa de Markdown
                   <div className="leading-relaxed">{msg.texto}</div>
                 )}
               </div>
             ))}
-            
-            {/* ANIMAÇÃO DE DIGITAÇÃO DA IA */}
+
             {chatCarregando && (
-              <div className="bg-white border border-slate-200 text-blue-600 self-start rounded-2xl rounded-tl-sm shadow-sm p-4 flex gap-1.5 items-center w-16 h-10">
-                <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-100"></span>
-                <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-200"></span>
+              <div className="flex h-10 w-16 items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-blue-700"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-blue-700 delay-100"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-blue-700 delay-200"></span>
               </div>
             )}
-            
-            {/* Essa div vazia é o "alvo" para onde a tela rola automaticamente */}
+
             <div ref={chatFimRef} />
           </div>
 
-          {/* RODAPÉ DO CHAT (Área de Digitação) */}
-          <div className="p-3 bg-white border-t border-slate-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
-            {/* 'focus-within': quando o usuário clica no input, a borda da div inteira muda de cor! */}
-            <div className="flex bg-slate-50 rounded-xl overflow-hidden border border-slate-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <input 
-                type="text" 
+          <div className="border-t border-slate-200 bg-white p-3">
+            <div className="flex overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100">
+              <input
+                type="text"
                 value={inputChat}
-                onChange={(e) => setInputChat(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !chatCarregando) enviarMensagemIA(inputChat) }}
+                onChange={(event) => setInputChat(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !chatCarregando) enviarMensagemIA(inputChat)
+                }}
                 placeholder="Pergunte como resolver um erro..."
-                className="flex-1 bg-transparent px-4 py-3 outline-none text-slate-700 placeholder-slate-400 text-sm"
+                className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400"
               />
-              <button 
-                onClick={() => enviarMensagemIA(inputChat)} 
+              <button
+                type="button"
+                onClick={() => enviarMensagemIA(inputChat)}
                 disabled={chatCarregando || !inputChat.trim()}
-                className="bg-blue-600 text-white px-4 py-2 m-1.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center shadow-sm hover:shadow"
+                className="m-1 inline-flex items-center justify-center rounded-md bg-blue-700 px-3 text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-blue-300"
+                aria-label="Enviar mensagem"
               >
-                {/* Ícone de enviar simples em texto (pode ser trocado por um SVG depois) */}
-                ➤
+                <Send size={17} aria-hidden="true" />
               </button>
             </div>
           </div>
-
         </div>
       )}
 
-      {/* 2. O BOTÃO FLUTUANTE (A Bolha Principal) */}
-      <button 
+      <button
+        type="button"
         onClick={() => setChatAberto(!chatAberto)}
-        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 text-2xl z-50 ${
-          chatAberto 
-            // Botão fechado (X)
-            ? 'bg-slate-800 text-white hover:bg-slate-900 rotate-90 scale-90' 
-            // Botão aberto (Estrelas)
-            : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-110 hover:-translate-y-1'
+        className={`flex h-14 w-14 items-center justify-center rounded-full border shadow-xl transition ${
+          chatAberto
+            ? 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+            : 'border-blue-700 bg-blue-700 text-white hover:bg-blue-800'
         }`}
+        aria-label={chatAberto ? 'Fechar assistente IA' : 'Abrir assistente IA'}
       >
-        {chatAberto ? '✖' : '✨'}
+        {chatAberto ? <X size={22} aria-hidden="true" /> : <Sparkles size={22} aria-hidden="true" />}
       </button>
-
     </div>
-  );
+  )
 }

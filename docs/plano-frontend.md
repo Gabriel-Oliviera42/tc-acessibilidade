@@ -254,6 +254,37 @@ Primeira implementacao visual:
 - area reservada para previa futura do site analisado
 - bloco lateral para reforcar o papel do assistente IA
 
+Refinamento apos revisao visual:
+
+- remover selos tecnicos soltos da tela inicial
+- trocar o texto inicial por uma promessa mais simples e menos repetitiva
+- explicar o produto com tres blocos curtos: analise automatica, relatorio claro e ajuda com IA
+- melhorar footer com cards e icones
+- remover card redundante do assistente IA na tela de resultado
+- manter apenas o painel futuro de visual do site, com texto mais claro
+- deixar cada problema mais informativo, com regra Axe, diagnostico e elemento afetado
+
+Segundo refinamento apos teste local:
+
+- ajustar titulo inicial para evitar quebra visual ruim
+- substituir footer em cards por uma faixa mais profissional e compacta
+- corrigir cards de problemas para impedir que o bloco de codigo estoure a tela
+- reorganizar diagnostico e elemento afetado para leitura mais confortavel
+- alinhar o visual do chat IA com a paleta do restante da interface
+
+Terceiro refinamento apos revisao:
+
+- remover bloco "Proximo passo" dos cards de erro
+- dar mais espaco para o elemento HTML afetado
+- colocar rolagem propria na lista de problemas
+- manter footer tambem depois da analise, em versao mais compacta
+
+Quarto refinamento apos revisao:
+
+- manter footer preso ao rodape do layout durante carregamento
+- ordenar problemas por severidade: criticos, serios, moderados e menores
+- redesenhar o resumo do relatorio com total separado, barra de distribuicao e cards menores
+
 Componentes criados:
 
 - `AppHeader`
