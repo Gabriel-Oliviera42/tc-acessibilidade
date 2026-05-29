@@ -35,7 +35,7 @@ Nao entram nesta sprint:
 1. Mapear erros possiveis do fluxo atual. Status: em andamento.
 2. Padronizar formato de erro retornado pelo backend. Status: iniciado.
 3. Padronizar mensagens amigaveis para o frontend. Status: iniciado.
-4. Melhorar status do Celery quando possivel.
+4. Melhorar status do Celery quando possivel. Status: iniciado.
 5. Investigar posicao de fila no Redis/Celery.
 6. Decidir se tempo estimado sera real, aproximado ou omitido.
 7. Testar com sites leves, medios e problematicos.
@@ -82,6 +82,12 @@ Primeira mudanca aplicada:
 - `analyzer_service.py` agora retorna erros estruturados com `status`, `codigo_erro`, `mensagem`, `error` e `detalhe_tecnico`.
 - `App.jsx` agora reconhece quando uma tarefa Celery termina com sucesso tecnico, mas o resultado da analise contem erro tratado.
 - O usuario passa a receber a mensagem amigavel em vez de cair em um estado vazio do relatorio.
+
+Segunda mudanca aplicada:
+
+- `main.py` agora retorna status de analise com campos estaveis: `estado`, `codigo_status`, `mensagem`, `status` e `etapa`.
+- `tasks.py` agora informa etapas com `codigo_status`: preparacao, execucao e finalizacao.
+- `App.jsx` agora mostra a mensagem atual da API enquanto a analise esta na fila ou em processamento.
 
 ## Fila
 

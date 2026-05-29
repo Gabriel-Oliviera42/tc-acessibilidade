@@ -10,6 +10,7 @@ function App() {
   const [resultado, setResultado] = useState(null)
   const [carregando, setCarregando] = useState(false)
   const [erroBackend, setErroBackend] = useState(null)
+  const [statusAnalise, setStatusAnalise] = useState('')
 
   const [chatAberto, setChatAberto] = useState(false)
   const [mensagens, setMensagens] = useState([
@@ -43,10 +44,12 @@ function App() {
     setCarregando(true)
     setErroBackend(null)
     setResultado(null)
+    setStatusAnalise('Enviando URL para analise...')
 
     try {
       const response = await axios.post('/analisar', { url: urlTratada })
       const ticketId = response.data.ticket_id
+      setStatusAnalise(response.data.mensagem || 'Analise colocada na fila.')
 
       if (!ticketId) {
         setErroBackend('Nao foi possivel gerar um ticket de analise.')
@@ -59,7 +62,15 @@ function App() {
         await new Promise(resolve => setTimeout(resolve, 2000))
 
         const statusResponse = await axios.get(`/analisar/status/${ticketId}`)
-        const { estado, resultado: resultadoAnalise, erro } = statusResponse.data
+        const {
+          estado,
+          resultado: resultadoAnalise,
+          erro,
+          mensagem,
+          status,
+        } = statusResponse.data
+
+        setStatusAnalise(mensagem || status || 'Processando analise...')
 
         if (estado === 'SUCCESS') {
           if (resultadoAnalise?.status === 'erro' || resultadoAnalise?.error) {
@@ -74,7 +85,11 @@ function App() {
 
           finalizado = true
         } else if (estado === 'FAILURE') {
-          setErroBackend(erro || 'Erro ao processar o site. Verifique os logs do worker.')
+          setErroBackend(
+            mensagem ||
+            erro ||
+            'Erro ao processar o site. Verifique os logs do worker.'
+          )
           finalizado = true
         }
       }
@@ -83,6 +98,7 @@ function App() {
       setErroBackend('Erro ao conectar com o servidor Python.')
     } finally {
       setCarregando(false)
+      setStatusAnalise('')
     }
   }
 
@@ -134,7 +150,7 @@ function App() {
           />
 
           <main className="flex-1 p-4 overflow-y-auto">
-            {carregando && <p>Analisando o site...</p>}
+            {carregando && <p>{statusAnalise || 'Analisando o site...'}</p>}
             {erroBackend && !carregando && <p style={{ color: 'red' }}>Erro: {erroBackend}</p>}
             {!carregando && !erroBackend && !resultado && <p>Digite uma URL no topo e clique em Analisar.</p>}
           </main>

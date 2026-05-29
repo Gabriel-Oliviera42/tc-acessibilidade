@@ -10,8 +10,18 @@ def tarefa_analisar_site(self, url: str):
         state="PROGRESS",
         meta={
             "etapa": "preparando",
-            "mensagem": "Preparando análise de acessibilidade..."
-        }
+            "codigo_status": "preparando_analise",
+            "mensagem": "Preparando a analise de acessibilidade.",
+        },
+    )
+
+    self.update_state(
+        state="PROGRESS",
+        meta={
+            "etapa": "executando",
+            "codigo_status": "executando_analise",
+            "mensagem": "Carregando a pagina e verificando acessibilidade.",
+        },
     )
 
     resultado = asyncio.run(executar_analise_completa(url))
@@ -20,8 +30,9 @@ def tarefa_analisar_site(self, url: str):
         state="PROGRESS",
         meta={
             "etapa": "finalizando",
-            "mensagem": "Finalizando relatório..."
-        }
+            "codigo_status": "finalizando_relatorio",
+            "mensagem": "Finalizando o relatorio da analise.",
+        },
     )
 
     return resultado
