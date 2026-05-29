@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
-import Header from './components/Header'
-import Sidebar from './components/Sidebar'
+import AppHeader from './components/AppHeader'
+import AnalysisStatus from './components/AnalysisStatus'
+import AnalysisSummary from './components/AnalysisSummary'
 import ChatWidget from './components/ChatWidget'
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
+import IssueList from './components/IssueList'
+import ProjectFooter from './components/ProjectFooter'
+import UrlAnalyzerForm from './components/UrlAnalyzerForm'
 
 function App() {
   const [url, setUrl] = useState('')
@@ -11,6 +14,7 @@ function App() {
   const [carregando, setCarregando] = useState(false)
   const [erroBackend, setErroBackend] = useState(null)
   const [statusAnalise, setStatusAnalise] = useState('')
+  const [avisoInterface, setAvisoInterface] = useState('')
 
   const [chatAberto, setChatAberto] = useState(false)
   const [mensagens, setMensagens] = useState([
@@ -25,11 +29,27 @@ function App() {
     chatFimRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens])
 
+  useEffect(() => {
+    if (!avisoInterface) return
+
+    const timer = window.setTimeout(() => {
+      setAvisoInterface('')
+    }, 4000)
+
+    return () => window.clearTimeout(timer)
+  }, [avisoInterface])
+
   const contagem = {
     critical: resultado?.erros?.filter(e => e.impacto === 'critical').length || 0,
     serious: resultado?.erros?.filter(e => e.impacto === 'serious').length || 0,
     moderate: resultado?.erros?.filter(e => e.impacto === 'moderate').length || 0,
     minor: resultado?.erros?.filter(e => e.impacto === 'minor').length || 0,
+  }
+
+  const telaInicial = !carregando && !erroBackend && !resultado
+
+  const mostrarRecursoFuturo = (recurso) => {
+    setAvisoInterface(`${recurso} sera adicionado em uma etapa futura.`)
   }
 
   const analisarSite = async () => {
@@ -133,37 +153,95 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col font-sans">
-      <Header
-        url={url}
-        setUrl={setUrl}
-        analisarSite={analisarSite}
-        carregando={carregando}
-      />
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-950">
+      <AppHeader onSoon={mostrarRecursoFuturo} />
 
-      <PanelGroup direction="horizontal" className="flex-1">
-        <Panel defaultSize={100} className="flex">
-          <Sidebar
-            resultado={resultado}
-            contagem={contagem}
-            perguntarSobreErro={perguntarSobreErro}
-          />
+      {avisoInterface && (
+        <div className="fixed left-1/2 top-20 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-lg">
+          {avisoInterface}
+        </div>
+      )}
 
-          <main className="flex-1 p-4 overflow-y-auto">
-            {carregando && <p>{statusAnalise || 'Analisando o site...'}</p>}
-            {erroBackend && !carregando && <p style={{ color: 'red' }}>Erro: {erroBackend}</p>}
-            {!carregando && !erroBackend && !resultado && <p>Digite uma URL no topo e clique em Analisar.</p>}
+      {telaInicial ? (
+        <>
+          <main className="mx-auto flex min-h-[calc(100vh-17rem)] w-full max-w-6xl flex-col justify-center px-4 py-10 sm:px-6">
+            <section className="mx-auto w-full max-w-4xl text-center">
+              <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Acessibilidade digital</p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-normal text-slate-950 sm:text-5xl">
+                Analise a acessibilidade de um site em poucos minutos
+              </h1>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600">
+                Informe uma URL publica para identificar problemas de acessibilidade, entender prioridades
+                e pedir ajuda da IA para corrigir os pontos encontrados.
+              </p>
+
+              <div className="mt-8">
+                <UrlAnalyzerForm
+                  url={url}
+                  setUrl={setUrl}
+                  analisarSite={analisarSite}
+                  carregando={carregando}
+                />
+              </div>
+
+              <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs font-semibold text-slate-600">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">WCAG</span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">AxeCore</span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Playwright</span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">IA assistiva</span>
+              </div>
+            </section>
           </main>
-        </Panel>
 
-        <PanelResizeHandle className="w-2 bg-gray-300 hover:bg-gray-400 cursor-col-resize" />
+          <ProjectFooter />
+        </>
+      ) : (
+        <>
+          <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+            <section className="mb-5 rounded-lg border border-slate-200 bg-white p-4">
+              <UrlAnalyzerForm
+                url={url}
+                setUrl={setUrl}
+                analisarSite={analisarSite}
+                carregando={carregando}
+                compact
+              />
+            </section>
 
-        <Panel defaultSize={0}>
-          <div className="h-full bg-gray-200 p-4">
-            <p>Area da Imagem do Site</p>
-          </div>
-        </Panel>
-      </PanelGroup>
+            <AnalysisSummary resultado={resultado} contagem={contagem} />
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="space-y-5">
+                <AnalysisStatus statusAnalise={statusAnalise} erroBackend={erroBackend} />
+                <IssueList resultado={resultado} perguntarSobreErro={perguntarSobreErro} />
+              </div>
+
+              <aside className="space-y-5">
+                <section className="rounded-lg border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-950">Previa do site</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Esta area esta reservada para uma captura feita pelo Playwright em uma etapa futura.
+                  </p>
+                </section>
+
+                <section className="rounded-lg border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-950">Assistente IA</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Use o chat para pedir explicacoes sobre erros e exemplos de correcao.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setChatAberto(true)}
+                    className="mt-4 w-full rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                  >
+                    Abrir assistente
+                  </button>
+                </section>
+              </aside>
+            </div>
+          </main>
+        </>
+      )}
 
       <ChatWidget
         chatAberto={chatAberto}

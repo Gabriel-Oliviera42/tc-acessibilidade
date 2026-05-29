@@ -22,13 +22,35 @@ A entrega minima poderia ser apenas visual, mas a meta do dono do projeto e faze
 
 O projeto tambem deve servir como portfolio pessoal, alem de trabalho academico. Por isso, no futuro pode fazer sentido ter areas com apresentacao do projeto, autoria e link profissional, como LinkedIn.
 
+## Autoria E Contexto Academico
+
+Autor: Gabriel Lourenço de Oliveira.
+
+Instituicao: UNIFENAS, campus Alfenas.
+
+Curso/periodo: 7 periodo.
+
+Orientador: professor Celso.
+
+Links profissionais:
+
+- GitHub: `https://github.com/Gabriel-Oliviera42`
+- LinkedIn: `https://www.linkedin.com/in/gabriel-lourenco-ab7893273`
+
+Observacao: futuramente o site pode citar outros professores importantes para o autor, mas por enquanto o footer deve manter apenas as informacoes essenciais.
+
 ## Nome Do Projeto
 
 O nome final ainda nao esta decidido.
 
+Nome provisorio recomendado para discutir: AcessiLab.
+
+Motivo: comunica acessibilidade, tem tom academico/profissional e nao limita totalmente a evolucao futura para outros tipos de auditoria.
+
 Ideias iniciais para discutir:
 
 - TC Acessibilidade
+- AcessiLab
 - AcessiCheck
 - AcessiScan
 - Acessibilidade Lab
