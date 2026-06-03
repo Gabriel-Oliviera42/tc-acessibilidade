@@ -3,6 +3,7 @@ node_modules/
 __pycache__/
 venv/
 env/
+AGENTS.md
 
 # Arquivos de ambiente com senhas e chaves de API (NUNCA suba isso!)
 .env
