@@ -3,11 +3,11 @@ node_modules/
 __pycache__/
 venv/
 env/
-AGENTS.md
+docs/
 
 # Arquivos de ambiente com senhas e chaves de API (NUNCA suba isso!)
 .env
-
+a
 # Lixos do sistema operacional
 .DS_Store
 Thumbs.db
